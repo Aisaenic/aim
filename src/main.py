@@ -1,4 +1,4 @@
-import click, logging, subprocess, re, csv, functools, enum
+import click, logging, subprocess, re, csv, functools, validators
 from target import Target, TargetType
 logging.basicConfig(level=logging.DEBUG)
 
@@ -22,23 +22,25 @@ def main(targets : str, verbose : bool, inputfile : click.Path, outputfile : cli
     for t in dir_tar:
         t_type = can_resolve(t)
         if t_type:
+            if t_type == TargetType.DOMAIN:
+                t = t.replace('https://', '')
+                t = t.replace('http://', '')
             affirm.append(Target(t, t_type))
         elif debug:
             logging.error(f'Invalid target provided: {t}')
+    for i in affirm:
+        print(i)
             
 # returns the type of format the given target is in, or None if the format is invalid
 def can_resolve(candidate : str) -> Target:
-    split_by_dot = re.split('.|/', candidate)
-
+    split_by_dot = re.split('[./]', candidate)
     # check if it's a valid IP address
-    if len(split_by_dot) <= 5 and not re.search('[a-zA-Z]', candidate) and functools.reduce((lambda i, j : 0 <= i and i <=255 and j), split_by_dot):
-        if candidate.count('/') == 1 and len(split_by_dot) == 5 and 0 <= split_by_dot[-1] and split_by_dot[-1] <= 32: # check if is CIDR range
+    if len(split_by_dot) <= 5 and not re.search('[a-zA-Z]', candidate) and all(0 <= int(i) and int(i) <= 255 for i in split_by_dot):
+        if candidate.count('/') == 1 and len(split_by_dot) == 5 and 0 <= int(split_by_dot[-1]) and int(split_by_dot[-1]) <= 32: # check if is CIDR range
             return TargetType.CIDR
         elif len(split_by_dot) == 4:
             return TargetType.IP
-    elif candidate.count('.') >= 1: # check if it is a valid domain name, remove prepending protocol if there
-        candidate.replace('http://', '')
-        candidate.replace('https://', '')
+    elif validators.domain(candidate.replace('https://','')) or validators.domain(candidate.replace('http://', '')): # check if it is a valid domain name, remove prepending protocol if there
         return TargetType.DOMAIN
     return None
 

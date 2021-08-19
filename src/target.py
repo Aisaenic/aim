@@ -13,3 +13,5 @@ class Target(object):
         self.t_type = t_type
         self.info = {} # placeholder for intel
 
+    def __str__(self) -> str:
+        return f'{self.target}'
