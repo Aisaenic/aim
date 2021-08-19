@@ -8,10 +8,18 @@ class TargetType(enum.Enum):
 
 class Target(object):
 
-    def __init__(self, target : str, t_type : TargetType):
+    def __init__(self, target : str, t_type : TargetType, verbose : bool):
         self.target = target
         self.t_type = t_type
-        self.info = {} # placeholder for intel
+        if verbose:
+            self.r_type = 'verbose'
+        else:
+            self.r_type = 'concise'
 
     def __str__(self) -> str:
-        return f'{self.target}'
+        return f'Target: {self.target}, Type: {self.t_type}'
+    
+    # returns all data aggregated on target in json form
+    def report(self) -> dict:
+        data = {'target': self.target, 'type': self.t_type, 'report_type': self.r_type}
+        return data

@@ -1,4 +1,4 @@
-import click, logging, subprocess, re, csv, functools, validators
+import click, logging, subprocess, re, csv, functools, validators, subprocess
 from target import Target, TargetType
 logging.basicConfig(level=logging.DEBUG)
 
@@ -25,17 +25,21 @@ def main(targets : str, verbose : bool, inputfile : click.Path, outputfile : cli
             if t_type == TargetType.DOMAIN:
                 t = t.replace('https://', '')
                 t = t.replace('http://', '')
-            affirm.append(Target(t, t_type))
+            affirm.append(Target(t, t_type, verbose))
         elif debug:
             logging.error(f'Invalid target provided: {t}')
-    for i in affirm:
-        print(i)
+
+    for a in affirm:
+        print(str(a))
+    # now resolve targets
+    # do basic if not verbose
+    # otherwise do everything
             
 # returns the type of format the given target is in, or None if the format is invalid
 def can_resolve(candidate : str) -> Target:
     split_by_dot = re.split('[./]', candidate)
     # check if it's a valid IP address
-    if len(split_by_dot) <= 5 and not re.search('[a-zA-Z]', candidate) and all(0 <= int(i) and int(i) <= 255 for i in split_by_dot):
+    if len(split_by_dot) <= 5 and not re.search('[a-zA-Z]', candidate) and all(0 <= int(i) and int(i) <= 255 for i in split_by_dot): # can cast to int because check for alpha has to pass first
         if candidate.count('/') == 1 and len(split_by_dot) == 5 and 0 <= int(split_by_dot[-1]) and int(split_by_dot[-1]) <= 32: # check if is CIDR range
             return TargetType.CIDR
         elif len(split_by_dot) == 4:
