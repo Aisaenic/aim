@@ -1,4 +1,4 @@
-import click, logging, subprocess, re, csv, functools, validators, subprocess
+import click, logging, subprocess, re, csv, functools, validators
 from target import Target, TargetType
 logging.basicConfig(level=logging.DEBUG)
 
@@ -14,27 +14,44 @@ def main(targets : str, verbose : bool, inputfile : click.Path, outputfile : cli
     # compile list of targets, remove duplicates, store improperly-formatted ones for error message
     dir_tar = list(map(lambda i : i.strip(), re.split(',\s|[, ]', targets)))
     if inputfile:
-        with open(inputfile) as tar_in:
+        with open(inputfile, 'r') as tar_in:
             dir_tar.extend(list(map(lambda i : i.strip(), tar_in)))
             dir_tar = set(dir_tar)
     # add 'unable to resolve here'
-    affirm = []
+    affirmed = []
     for t in dir_tar:
         t_type = can_resolve(t)
         if t_type:
             if t_type == TargetType.DOMAIN:
                 t = t.replace('https://', '')
                 t = t.replace('http://', '')
-            affirm.append(Target(t, t_type, verbose))
+            affirmed.append(Target(t, t_type, verbose))
         elif debug:
             logging.error(f'Invalid target provided: {t}')
-
-    for a in affirm:
+    
+    for a in affirmed:
         print(str(a))
-    # now resolve targets
+    # current test is python3 main.py 'http://test.com' -in test.csv -debug
+
+    """
+    # TODO: now resolve targets
     # do basic if not verbose
     # otherwise do everything
-            
+    results = []
+    mod_base = subprocess.run(["python3", "resolve_non_verbose.py", affirmed], stdout=subprocess.PIPE)
+    results.append(mod_base.stdout)
+
+    if verbose:
+        mod_one = subprocess.run(["python3", "one.py", affirmed], stdout=subprocess.PIPE)
+        mod_two = subprocess.run(["python3", "two.py", affirmed], stdout=subprocess.PIPE)
+        results.append(mod_one.stdout, mod_two.stdout)
+
+    # handle output, by writing it to stdout or output file, if specified
+    if outputfile:
+        with open(outputfile, 'w') as results_out:
+            for r in results:
+                results_out.write(r)
+    """        
 # returns the type of format the given target is in, or None if the format is invalid
 def can_resolve(candidate : str) -> Target:
     split_by_dot = re.split('[./]', candidate)
